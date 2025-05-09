@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ソートアルゴリズム学習</title>
+    <!-- Prism.js のCSS (例) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: Arial , 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', 'Hiragino Sans', 'ヒラギノ角ゴシック', Meiryo, 'メイリオ', 'Yu Gothic', '游ゴシック', 'MS PGothic', 'ＭＳ Ｐゴシック', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .table-of-contents {
+            width: 15%; /* 目次項目増加のため少し幅を広げる */
+            background-color: #f4f4f4;
+            font-size: 10px;
+            padding: 10px 15px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            height: 100vh;
+            border-right: 1px solid #ccc;
+        }
+
+        .table-of-contents h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .table-of-contents ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .table-of-contents ul ul {
+            padding-left: 15px;
+        }
+         .table-of-contents ul ul ul { /* 3階層目のインデント */
+            padding-left: 15px;
+        }
+
+
+        .table-of-contents li a {
+            display: block;
+            padding: 5px 5px; /* パディング微調整 */
+            text-decoration: none;
+            color: #337ab7;
+            border-radius: 4px;
+            margin-bottom: 4px; /* マージン微調整 */
+            font-size: 10.5px; /* フォントサイズ微調整 */
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .table-of-contents li a:hover {
+            background-color: #e0e0e0;
+            color: #23527c;
+        }
+
+        .table-of-contents li a.active-toc-item {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            padding: 30px; /* This padding is for the scrollable area, not the content-page itself */
+            box-sizing: border-box;
+            overflow-y: auto;
+            height: 100vh;
+            position: relative; /* Added for potential absolute positioning of children if needed */
+        }
+
+        .content-page {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 25px; /* This is the padding we need to account for */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: absolute;
+            top: 30px; /* Matches content-area padding */
+            left: 30px; /* Matches content-area padding */
+            right: 30px; /* Matches content-area padding */
+            bottom: 30px; /* Matches content-area padding */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease-in-out, visibility 0s 0.4s;
+            overflow-y: auto; /* iframeの縦スクロールのため */
+            overflow-x: hidden; /* iframeの横スクロールは基本的にさせない前提 */
+        }
+
+        .content-page:target {
+            opacity: 1;
+            visibility: visible;
+            z-index: 10;
+            transition: opacity 0.4s ease-in-out, visibility 0s 0s;
+        }
+
+        .content-page h2 {
+            color: #333;
+            margin-top: 0;
+            font-weight: bold;
+            font-size: 28px;
+            line-height: 1.3;
+            margin-left: calc(4% - 25px);
+            padding-left: 20px;
+            padding-bottom: 8px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .content-page h2::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5px;
+            background-color: red;
+            bottom: 10px;
+        }
+
+        .content-page h2::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: -25px;
+            bottom: 0;
+            height: 2px;
+            background-color: red;
+        }
+
+        .content-page h3 {
+            color: #444;
+            margin-top: 20px;
+            border-bottom: 1px dotted #ccc;
+            padding-bottom: 5px;
+        }
+        .content-page p, .content-page ul, .content-page ol {
+            line-height: 1.7;
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .content-page ul, .content-page ol {
+            padding-left: 20px;
+        }
+        .content-page pre {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 1em;
+            border-radius: 0.3em;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+        .content-page pre code {
+            font-family: 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+        }
+
+        .internal-link-list li {
+            margin-bottom: 8px;
+        }
+
+
+        .navigation-buttons {
+            position: fixed;
+            bottom: 50px;
+            right: 50px;
+            z-index: 20;
+        }
+
+        .navigation-buttons button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .navigation-buttons button:hover {
+            background-color: #0056b3;
+        }
+        .navigation-buttons button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+#sort-intro .iframe-container {
+    width: calc(1440px * 0.77); /* スケール後の幅: 618.75px */
+    height: calc(825px * 0.77); /* スケール後の高さ: 1080px */
+    overflow: hidden;
+    position: relative; /* transform-origin の基準のためなど */
+    /* 必要に応じて margin などで配置調整 */
+}
+
+#sort-intro .iframe-container iframe {
+    /* 元のサイズを指定した上でスケールする */
+    width: 1440px;
+    height: 825px;
+    transform: scale(0.77);
+    transform-origin: top left;
+    border: none;
+}
+
+    </style>
+</head>
+<body>
+
+    <nav class="table-of-contents">
+        <h3>目次</h3>
+        <ul>
+            <li><a href="#sort-intro"><strong>ソートとは</strong></a>
+                <ul>
+                    <li><a href="#sort-human">人間のソート（トランプ）</a></li>
+                    <li><a href="#sort-computer">パソコンのソート</a></li>
+                    <li><a href="#sort-human-vs-computer">人間とパソコンの比較</a></li>
+                </ul>
+            </li>
+            <li><a href="#selection-sort-learn"><strong>選択ソートとは</strong></a>
+                <ul>
+                    <li><a href="#selection-sort-steps">選択ソートの仕組み ステップ</a></li>
+                    <li><a href="#selection-sort-example">選択ソートの仕組み 3つ・5つ</a></li>
+                </ul>
+            </li>
+            <li><a href="#selection-sort-exercise"><strong>選択ソートの演習</strong></a>
+                 <ul>
+                    <li><a href="#selection-sort-ex1-5num">5個</a></li>
+                    <li><a href="#selection-sort-ex2-7num">7個</a></li>
+                    <li><a href="#selection-sort-ex3-10num">10個（数字）</a></li>
+                    <li><a href="#selection-sort-ex4-10abc">10個（ABC）</a></li>
+                    <li><a href="#selection-sort-ex5-10jp">10個（日本語）</a></li>
+                </ul>
+            </li>
+            <li><a href="#real-world-applications"><strong>実社会への応用</strong></a>
+                <ul>
+                    <li><a href="#app-search-system">検索システムへの応用</a>
+                        <ul><li><a href="#app-search-system-ex">演習</a></li></ul>
+                    </li>
+                    <li><a href="#app-phonebook-system">電話帳システムへの応用</a>
+                        <ul><li><a href="#app-phonebook-system-ex">演習</a></li></ul>
+                    </li>
+                </ul>
+            </li>
+            <li><a href="#insertion-sort-learn"><strong>挿入ソート</strong></a>
+                <ul>
+                    <li><a href="#insertion-sort-steps">挿入ソート ステップ</a></li>
+                    <li><a href="#insertion-sort-merits">メリット</a></li>
+                    <li><a href="#insertion-sort-example">挿入ソートの仕組み（5個）</a></li>
+                </ul>
+            </li>
+            <li><a href="#quick-sort-learn"><strong>クイックソート</strong></a>
+                <ul>
+                    <li><a href="#quick-sort-steps">クイックソート ステップ</a></li>
+                    <li><a href="#quick-sort-merits">メリット</a></li>
+                    <li><a href="#quick-sort-example">クイックソートの仕組み（5個）</a></li>
+                </ul>
+            </li>
+            <li><a href="#shell-sort-learn"><strong>シェルソート</strong></a> <!-- 目次案では「シェルソートの仕組み」だが、他と合わせる -->
+                <ul>
+                    <li><a href="#shell-sort-steps">シェルソート ステップ</a></li>
+                    <li><a href="#shell-sort-merits">メリット</a></li>
+                    <li><a href="#shell-sort-example">シェルソートの仕組み（5個）</a></li>
+                </ul>
+            </li>
+            <li><a href="#insertion-sort-exercise"><strong>挿入ソートの演習</strong></a>
+                <ul>
+                    <li><a href="#is-ex-5num">5個</a></li>
+                    <li><a href="#is-ex-7items">7個</a></li>
+                    <li><a href="#is-ex-10num">10個（数字）</a></li>
+                    <li><a href="#is-ex-10abc">10個（ABC）</a></li>
+                    <li><a href="#is-ex-10jp">10個（日本語）</a></li>
+                </ul>
+            </li>
+            <li><a href="#quick-sort-exercise"><strong>クイックソートの演習</strong></a>
+                <ul>
+                    <li><a href="#qs-ex-5num">5個</a></li>
+                    <li><a href="#qs-ex-7items">7個</a></li>
+                    <li><a href="#qs-ex-10num">10個（数字）</a></li>
+                    <li><a href="#qs-ex-10abc">10個（ABC）</a></li>
+                    <li><a href="#qs-ex-10jp">10個（日本語）</a></li>
+                </ul>
+            </li>
+            <li><a href="#shell-sort-exercise"><strong>シェルソートの演習</strong></a> <!-- 目次案では「シェルソートの仕組み」だが、演習と解釈 -->
+                <ul>
+                    <li><a href="#ss-ex-5num">5個</a></li>
+                    <li><a href="#ss-ex-7items">7個</a></li>
+                    <li><a href="#ss-ex-10num">10個（数字）</a></li>
+                    <li><a href="#ss-ex-10abc">10個（ABC）</a></li>
+                    <li><a href="#ss-ex-10jp">10個（日本語）</a></li>
+                </ul>
+            </li>
+            <li><a href="#summary"><strong>まとめ</strong></a>
+                <ul>
+                    <li><a href="#summary-comparison">それぞれのソートについて・社会の仕組みへの応用</a></li>
+                </ul>
+            </li>
+            <li><a href="#finally-author"><strong>最後に</strong></a></li>
+        </ul>
+    </nav>
+
+    <main class="content-area">
+        <!-- ソートとは -->
+<section id="sort-intro" class="content-page">
+    <h2>ソートとは</h2>
+    <div class="iframe-container">
+        <iframe src="pages/search-sort-demo.html" width="1440" height="825" scrolling="no" title="検索ソートデモ"></iframe>
+    </div>
+</section>
+        <section id="sort-human" class="content-page"><h2>人間のソート（トランプ）</h2>
+        </section>
+        <section id="sort-computer" class="content-page"><h2>パソコンのソート</h2>
+        </section>
+        <section id="sort-human-vs-computer" class="content-page"><h2>人間とパソコンのソート比較</h2>
+        </section>
+
+        <!-- (他のsection要素は省略) -->
+        <section id="selection-sort-learn" class="content-page">
+            <h2>選択ソートとは</h2>
+        </section>
+        <section id="selection-sort-steps" class="content-page"><h2>選択ソートの仕組み ステップ</h2>
+        </section>
+        <section id="selection-sort-example" class="content-page"><h2>選択ソートの仕組み 3つ・5つ</h2>
+        </section>
+        <section id="selection-sort-exercise" class="content-page">
+            <h2>選択ソートの演習</h2>
+        </section>
+        <section id="selection-sort-ex1-5num" class="content-page">
+            <h2>選択ソート 演習: 5個</h2>
+        </section>
+        <section id="selection-sort-ex2-7num" class="content-page">
+            <h2>選択ソート 演習: 7個</h2>
+        </section>
+        <section id="selection-sort-ex3-10num" class="content-page">
+            <h2>選択ソート 演習: 10個（数字）</h2>
+        </section>
+        <section id="selection-sort-ex4-10abc" class="content-page">
+            <h2>選択ソート 演習: 10個（ABC）</h2>
+        </section>
+        <section id="selection-sort-ex5-10jp" class="content-page">
+            <h2>選択ソート 演習: 10個（日本語）</h2>
+        </section>
+        <section id="real-world-applications" class="content-page">
+            <h2>実社会への応用</h2>
+        </section>
+        <section id="app-search-system" class="content-page"><h2>検索システムへの応用</h2>
+        </section>
+        <section id="app-search-system-ex" class="content-page">
+            <h2>演習: 検索システムへの応用</h2>
+        </section>
+        <section id="app-phonebook-system" class="content-page"><h2>電話帳システムへの応用</h2>
+        </section>
+        <section id="app-phonebook-system-ex" class="content-page">
+            <h2>演習: 電話帳システムへの応用</h2>
+        </section>
+        <section id="insertion-sort-learn" class="content-page"><h2>挿入ソート</h2>
+        </section>
+        <section id="insertion-sort-steps" class="content-page"><h2>挿入ソート ステップ</h2>
+        </section>
+        <section id="insertion-sort-merits" class="content-page"><h2>挿入ソートのメリット</h2>
+        </section>
+        <section id="insertion-sort-example" class="content-page"><h2>挿入ソートの仕組み（5個）</h2>
+        </section>
+        <section id="quick-sort-learn" class="content-page"><h2>クイックソート</h2>
+        </section>
+        <section id="quick-sort-steps" class="content-page"><h2>クイックソート ステップ</h2>
+        </section>
+        <section id="quick-sort-merits" class="content-page"><h2>クイックソートのメリット</h2>
+        </section>
+        <section id="quick-sort-example" class="content-page"><h2>クイックソートの仕組み（5個）</h2>
+        </section>
+        <section id="shell-sort-learn" class="content-page"><h2>シェルソート</h2>
+        </section>
+        <section id="shell-sort-steps" class="content-page"><h2>シェルソート ステップ</h2>
+        </section>
+        <section id="shell-sort-merits" class="content-page"><h2>シェルソートのメリット</h2>
+        </section>
+        <section id="shell-sort-example" class="content-page"><h2>シェルソートの仕組み（5個）</h2>
+        </section>
+        <section id="insertion-sort-exercise" class="content-page">
+            <h2>挿入ソートの演習</h2>
+        </section>
+        <section id="is-ex-5num" class="content-page">
+            <h2>挿入ソート 演習: 5個</h2>
+        </section>
+        <section id="is-ex-7items" class="content-page">
+            <h2>挿入ソート 演習: 7個</h2>
+        </section>
+        <section id="is-ex-10num" class="content-page">
+            <h2>挿入ソート 演習: 10個（数字）</h2>
+        </section>
+        <section id="is-ex-10abc" class="content-page">
+            <h2>挿入ソート 演習: 10個（ABC）</h2>
+        </section>
+        <section id="is-ex-10jp" class="content-page">
+            <h2>挿入ソート 演習: 10個（日本語）</h2>
+        </section>
+        <section id="quick-sort-exercise" class="content-page">
+            <h2>クイックソートの演習</h2>
+        </section>
+        <section id="qs-ex-5num" class="content-page">
+            <h2>クイックソート 演習: 5個</h2>
+        </section>
+        <section id="qs-ex-7items" class="content-page">
+            <h2>クイックソート 演習: 7個</h2>
+        </section>
+        <section id="qs-ex-10num" class="content-page">
+            <h2>クイックソート 演習: 10個（数字）</h2>
+        </section>
+        <section id="qs-ex-10abc" class="content-page">
+            <h2>クイックソート 演習: 10個（ABC）</h2>
+        </section>
+        <section id="qs-ex-10jp" class="content-page">
+            <h2>クイックソート 演習: 10個（日本語）</h2>
+        </section>
+        <section id="shell-sort-exercise" class="content-page">
+            <h2>シェルソートの演習</h2>
+        </section>
+        <section id="ss-ex-5num" class="content-page">
+            <h2>シェルソート 演習: 5個</h2>
+        </section>
+        <section id="ss-ex-7items" class="content-page">
+            <h2>シェルソート 演習: 7個</h2>
+        </section>
+        <section id="ss-ex-10num" class="content-page">
+            <h2>シェルソート 演習: 10個（数字）</h2>
+        </section>
+        <section id="ss-ex-10abc" class="content-page">
+            <h2>シェルソート 演習: 10個（ABC）</h2>
+        </section>
+        <section id="ss-ex-10jp" class="content-page">
+            <h2>シェルソート 演習: 10個（日本語）</h2>
+        </section>
+        <section id="summary" class="content-page">
+            <h2>まとめ</h2>
+        </section>
+        <section id="summary-comparison" class="content-page"><h2>それぞれのソートについて・社会の仕組みへの応用</h2>
+        </section>
+        <section id="finally-author" class="content-page">
+            <h2>最後に</h2>
+        </section>
+
+        <!--<div class="navigation-buttons">
+            <button id="prevButton">前へ</button>
+            <button id="nextButton">次へ</button>
+        </div>-->
+    </main>
+
+    <!-- Prism.js の JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-plain.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tocLinks = document.querySelectorAll('.table-of-contents a');
+            const contentPages = document.querySelectorAll('.content-page');
+            const prevButton = document.getElementById('prevButton');
+            const nextButton = document.getElementById('nextButton');
+
+            let currentPageIndex = -1;
+
+            function initializePages() {
+                const hash = window.location.hash;
+                let initialPageId = '';
+
+                if (hash && document.querySelector(hash)) {
+                    initialPageId = hash;
+                } else if (contentPages.length > 0) {
+                    initialPageId = `#${contentPages[0].id}`;
+                }
+
+                if (initialPageId) {
+                     contentPages.forEach((page, index) => {
+                        if (`#${page.id}` === initialPageId) {
+                            currentPageIndex = index;
+                        }
+                    });
+                    if (window.location.hash !== initialPageId && initialPageId) {
+                         window.location.hash = initialPageId;
+                    } else {
+                        handleHashChange();
+                    }
+                } else if (contentPages.length > 0) {
+                    currentPageIndex = 0;
+                    window.location.hash = contentPages[0].id; // Fallback to first page if no valid hash
+                } else {
+                     handleHashChange();
+                }
+            }
+
+            function handleHashChange() {
+                const currentHash = window.location.hash;
+                let found = false;
+                contentPages.forEach((page, index) => {
+                    if (`#${page.id}` === currentHash) {
+                        currentPageIndex = index;
+                        found = true;
+                    }
+                });
+                 if (!found && contentPages.length > 0) { // If hash is invalid, go to first page
+                    currentPageIndex = 0;
+                    if (window.location.hash !== `#${contentPages[0].id}`) {
+                       window.location.hash = contentPages[0].id;
+                    } else { // If already at first page but hash was invalid, still need to update buttons
+                        updateActiveTocItem();
+                        updateNavButtons();
+                    }
+                } else if (!found && contentPages.length === 0) {
+                    currentPageIndex = -1;
+                }
+                updateActiveTocItem();
+                updateNavButtons();
+            }
+
+
+            function updateActiveTocItem() {
+                const currentHash = window.location.hash;
+                tocLinks.forEach(link => {
+                    if (link.getAttribute('href') === currentHash) {
+                        link.classList.add('active-toc-item');
+                    } else {
+                        link.classList.remove('active-toc-item');
+                    }
+                });
+            }
+
+            function updateNavButtons() {
+                if (!prevButton || !nextButton || contentPages.length === 0) {
+                    if(prevButton) prevButton.disabled = true;
+                    if(nextButton) nextButton.disabled = true;
+                    return;
+                }
+                prevButton.disabled = (currentPageIndex <= 0);
+                nextButton.disabled = (currentPageIndex >= contentPages.length - 1);
+            }
+
+            function showPage(index) {
+                if (index >= 0 && index < contentPages.length) {
+                    const pageId = contentPages[index].id;
+                    if (window.location.hash !== `#${pageId}`) {
+                        window.location.hash = pageId;
+                    }
+                }
+            }
+
+            window.addEventListener('hashchange', handleHashChange);
+
+            if (prevButton) {
+                prevButton.addEventListener('click', () => {
+                    if (currentPageIndex > 0) {
+                        showPage(currentPageIndex - 1);
+                    }
+                });
+            }
+
+            if (nextButton) {
+                nextButton.addEventListener('click', () => {
+                    if (currentPageIndex < contentPages.length - 1) {
+                        showPage(currentPageIndex + 1);
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', (event) => {
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+                    return;
+                }
+                if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    if (prevButton && !prevButton.disabled) {
+                        showPage(currentPageIndex - 1);
+                    }
+                } else if (event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    if (nextButton && !nextButton.disabled) {
+                        showPage(currentPageIndex + 1);
+                    }
+                }
+            });
+
+            initializePages();
+            // Prism.highlightAll(); // Uncomment if you add actual code blocks later.
+        });
+    </script>
+
+</body>
+</html>
